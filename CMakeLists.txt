@@ -8,7 +8,7 @@ find_package(GLEW)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/external/glfw)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/external/glm)
 
-add_executable(grafikaProjekt ${CMAKE_CURRENT_SOURCE_DIR}/src/main.cpp ${CMAKE_CURRENT_SOURCE_DIR}/src/Shader.cpp)
+add_executable(grafikaProjekt ${CMAKE_CURRENT_SOURCE_DIR}/src/main.cpp ${CMAKE_CURRENT_SOURCE_DIR}/src/Shader.cpp ${CMAKE_CURRENT_SOURCE_DIR}/src/Application.cpp ${CMAKE_CURRENT_SOURCE_DIR}/src/Mesh.cpp)
 
 target_include_directories(grafikaProjekt PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/external/glfw/include)
 target_include_directories(grafikaProjekt PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/external/glm)
