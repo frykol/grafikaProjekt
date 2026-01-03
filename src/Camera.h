@@ -60,6 +60,13 @@ class Camera{
             updateVectors();
         }
 
+        void fastMove(){
+            moveSpeed = 8.0f;
+        }
+        void normalMove(){
+            moveSpeed = 3.0f;
+        }
+
         void moveForward(float dt){
             m_Position += m_CameraFront * (moveSpeed * dt);
         }

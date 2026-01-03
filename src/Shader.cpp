@@ -54,6 +54,7 @@ void Shader::compile() {
 }
 
 void Shader::bind() { glUseProgram(m_programId); }
+void Shader::unbind() { glUseProgram(0); }
 
 
 void Shader::setMat4(const std::string& uniformName, const glm::mat4& matrix){
@@ -63,4 +64,12 @@ void Shader::setMat4(const std::string& uniformName, const glm::mat4& matrix){
 }
 void Shader::setVec3(const std::string& uniformName, const glm::vec3& vector){
   glUniform3f(glGetUniformLocation(m_programId, uniformName.c_str()), vector.x, vector.y, vector.z);
+}
+
+void Shader::setInt(const std::string& uniformName, int value){
+  glUniform1i(glGetUniformLocation(m_programId, uniformName.c_str()), value);
+}
+
+void Shader::setFloat(const std::string& uniformName, float value){
+  glUniform1f(glGetUniformLocation(m_programId, uniformName.c_str()), value);
 }

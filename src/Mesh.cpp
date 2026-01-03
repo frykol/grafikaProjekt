@@ -3,12 +3,17 @@
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
 
+#include <iostream>
+
 Mesh::Mesh(float* data, size_t dataSize): m_DataSize(dataSize), m_Stride(0), m_Offset(0){
     glGenVertexArrays(1, &m_VAO);
     glBindVertexArray(m_VAO);
 
     glGenBuffers(1, &m_VBO);
     glBindBuffer(GL_ARRAY_BUFFER, m_VBO);
+
+    std::cout << "Data Size: " << dataSize << std::endl;
+    std::cout << "Constructor Stride: " << m_Stride << std::endl;
 
     glBufferData(GL_ARRAY_BUFFER, dataSize, data, GL_STATIC_DRAW);
 
@@ -37,6 +42,8 @@ void Mesh::enableVertexAttribPointer(){
         m_Offset += m_AttribSizes[i] * sizeof(float);
     }
     m_VertexCount = m_DataSize / m_Stride;
+    std::cout << "Strinde: " << m_Stride << std::endl;
+    std::cout << "Vertex Count: " << m_VertexCount << std::endl;
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     unbind();
 }

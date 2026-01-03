@@ -46,6 +46,8 @@ public:
 
   void setMat4(const std::string& uniformName, const glm::mat4& matrix);
   void setVec3(const std::string& uniformName, const glm::vec3& vector);
+  void setInt(const std::string& uniformName, int value);
+  void setFloat(const std::string& uniformName, float value);
 
   void bind();
   void unbind();
