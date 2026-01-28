@@ -9,6 +9,7 @@
 #include "Camera.h"
 #include "Texture.h"
 #include "Object.h"
+#include "ui/EditorUI.h"
 
 #include <vector>
 
@@ -23,23 +24,27 @@ struct WinSize{
     int height;
 };
 
-// enum class ShaderID{
-//     Geometry = 0,
-//     Light,
-// };
+struct robotMesh{
+    Mesh* robotStand;
+    Mesh* robotEngine;
+    Mesh* robotArm;
+    Mesh* robotSecondArm;
+};
 
-// struct Material{
-//     ShaderID shader; 
-//     Texture* texture;
-//     float shinines;
-// };
+struct testRobotS{
+    float animTime;
+    float animDuration;
+    Object* stand;
+    Object* engine;
+    Object* arm;
+    Object* secondArm;
 
-// struct Object{
-//     Mesh* mesh;
-//     Material material;
-//     glm::mat4 world;
-//     glm::mat4 local;
-// };
+    int stage = 0;
+
+    glm::vec3 engineRotation;
+    glm::vec3 armRotation;
+    glm::vec3 secondArmRotation;
+};
 
 class Application{
     private:
@@ -47,30 +52,37 @@ class Application{
         WinSize m_WinSize;
         std::string m_Name;
 
-        Mesh* m_CubeMesh;
         Mesh* m_TestMesh;
-        Mesh* m_StandMesh;
-        Mesh* m_ArmMesh;
-        Mesh* m_ArmArmMesh;
-        //glm::mat4 m_Model;
+        Mesh* m_WallMesh;
+        //TEST ROBOT
+        Mesh* m_RobotStand;
+        Mesh* m_RobotEngine;
+        Mesh* m_RobotArm;
+        Mesh* m_RobotSecondArm;
 
+
+        //END TEST ROBOT
+        testRobotS* m_Robot;
+        testRobotS* m_SecondRobot;
 
         Mesh* m_LightMesh;
-        glm::mat4 m_LightModel;
-        glm::vec3 m_LightPos;
 
         Camera m_Camera;
 
         Shader* m_Shader;
         Shader* m_LightShader;
         Texture* m_Texture;
+        Texture* m_MetalTexture;
+        Texture* m_CubeTexture;
+        Texture* m_WallTexture;
 
-        float m_Angle = 360;
-        float m_ArmArmAngle = 360;
-        Object* m_ArmTest;
-        Object* m_ArmArmsTest;
+        Object* m_CubeToPickup;
+
         std::vector<Object> m_Objects;
         std::vector<Object> m_Lights;
+
+        EditorUI m_UI;
+        
 
         bool m_Keys[GLFW_KEY_LAST + 1]{};
 
@@ -82,7 +94,10 @@ class Application{
 
         bool m_IsFocused = false;
 
+        void testAnimate(float dt);
+
         void init();
+        void initData();
         void initUI();
         void update(float dt);
         void updateUI();
@@ -91,5 +106,6 @@ class Application{
         void onMouseMove(double x, double y);
     public:
         Application(int width, int height, const std::string& name);
+        ~Application();
         void run();
 };

@@ -9,7 +9,6 @@ uniform mat4 uProjection;
 
 // uniform vec3 uColor;
 
-out vec3 vertColor;
 out vec2 TexCoord;
 out vec3 Normal;
 out vec3 FragPos;
@@ -17,7 +16,6 @@ out vec3 FragPos;
 void main(){
   gl_Position = uProjection * uView * uModel * vec4(vertPos, 1.0);
   FragPos = vec3(uModel * vec4(vertPos, 1.0));
-  vertColor = normals * 0.5 + 0.5;
   TexCoord = texCoord;
   Normal = normals;
 }

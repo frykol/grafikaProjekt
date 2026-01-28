@@ -52,7 +52,6 @@ Mesh* MeshLoader::loadObj(const std::string& path){
 
     file.close();
 
-    std::cout << objStream.str() << std::endl;
 
     while(std::getline(objStream, line)){
         std::vector<std::string> tokens;
@@ -104,7 +103,7 @@ Mesh* MeshLoader::loadObj(const std::string& path){
         vertexData.push_back(uv.y);
     }
 
-    std::cout << vertexData.size() << " " << vertexData.size() * sizeof(float) << std::endl;
+    // std::cout << vertexData.size() << " " << vertexData.size() * sizeof(float) << std::endl;
     Mesh* mesh = new Mesh(vertexData.data(), vertexData.size() * sizeof(float));
     
     mesh->addVertexAttribPointer(3);

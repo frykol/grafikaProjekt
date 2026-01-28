@@ -3,15 +3,58 @@
 #include <GLFW/glfw3.h>
 #include <iostream>
 
-#include <imgui.h>
-#include <backends/imgui_impl_glfw.h>
-#include <backends/imgui_impl_opengl3.h>
+// #include <imgui.h>
+// #include <backends/imgui_impl_glfw.h>
+// #include <backends/imgui_impl_opengl3.h>
+
+#include "ui/GeneralLayer.h"
+#include "ui/ObjectLayer.h"
 
 #include "MeshLoader.h"
 
 
 Application::Application(int width, int height, const std::string& name): m_WinSize({width, height}), m_Name(name){
     init();
+    initData();
+}
+
+Application::~Application(){
+    if(m_Robot){
+        std::cout << "Robot Deleted" << std::endl;
+        delete m_Robot;
+    }
+    if(m_SecondRobot){
+        std::cout << "Second robot Deleted" << std::endl;
+        delete m_SecondRobot;
+    }
+
+    m_Objects.clear();
+    m_Lights.clear();
+    if(m_TestMesh){
+        std::cout << "Cube Mesh Deleted" << std::endl;
+        delete m_TestMesh;
+    }
+    if(m_LightMesh){
+        std::cout << "Light Mesh Deleted" << std::endl;
+        delete m_LightMesh;
+    }
+    if(m_RobotStand){
+        std::cout << "Robot Stand Deleted" << std::endl;
+        delete m_RobotStand;
+    }
+    if(m_RobotEngine){
+        std::cout << "Robot Engine Deleted" << std::endl;
+        delete m_RobotEngine;
+    }
+    if(m_RobotArm){
+        std::cout << "Robot Arm Deleted" << std::endl;
+        delete m_RobotArm;
+    }
+    if(m_RobotSecondArm){
+        std::cout << "Robot Second Arm Deleted" << std::endl;
+        delete m_RobotSecondArm;
+    }
+
 }
 
 
@@ -67,8 +110,6 @@ void Application::init(){
             app->m_isLeftMousePress = true;
         }
     });
-
-
     glewExperimental = GL_TRUE;
     GLenum err = glewInit();
 	if (GLEW_OK != err)
@@ -78,86 +119,73 @@ void Application::init(){
 	}
     glEnable(GL_DEPTH_TEST);
 
-    
+}
 
-    float cubeVerts[] = {
-    // +Z (front)
-    -0.5f,-0.5f, 0.5f,  0.0f, 0.0f, 1.0f,  0.0f, 0.0f,
-     0.5f,-0.5f, 0.5f,  0.0f, 0.0f, 1.0f,  1.0f, 0.0f,
-     0.5f, 0.5f, 0.5f,  0.0f, 0.0f, 1.0f,  1.0f, 1.0f,
-     0.5f, 0.5f, 0.5f,  0.0f, 0.0f, 1.0f,  1.0f, 1.0f,
-    -0.5f, 0.5f, 0.5f,  0.0f, 0.0f, 1.0f,  0.0f, 1.0f,
-    -0.5f,-0.5f, 0.5f,  0.0f, 0.0f, 1.0f,  0.0f, 0.0f,
+// void createRobot(){
+//     size_t standIndex = m_Objects.size();
+//     m_Objects.emplace_back("Robot Stand", m_RobotStand, metalMat, glm::vec3(0, 0.4f, 0));
+//     size_t engineIndex = m_Objects.size();
+//     m_Objects.emplace_back("Robot Engine", m_RobotEngine, metalMat, glm::vec3(-0.69f, 0.39f, -0.02f));
+//     size_t armIndex = m_Objects.size();
+//     m_Objects.emplace_back("Robot Arm", m_RobotArm, metalMat, glm::vec3(0.18f, 0.76f, -1.04f));
+//     size_t secondArmIndex = m_Objects.size();
+//     m_Objects.emplace_back("Robot Second Arm", m_RobotSecondArm, metalMat, glm::vec3(-0.14f, 3.75f, 0.08f));
 
-    // -Z (back)
-    -0.5f,-0.5f,-0.5f,  0.0f, 0.0f,-1.0f,  0.0f, 0.0f,
-    -0.5f, 0.5f,-0.5f,  0.0f, 0.0f,-1.0f,  1.0f, 0.0f,
-     0.5f, 0.5f,-0.5f,  0.0f, 0.0f,-1.0f,  1.0f, 1.0f,
-     0.5f, 0.5f,-0.5f,  0.0f, 0.0f,-1.0f,  1.0f, 1.0f,
-     0.5f,-0.5f,-0.5f,  0.0f, 0.0f,-1.0f,  0.0f, 1.0f,
-    -0.5f,-0.5f,-0.5f,  0.0f, 0.0f,-1.0f,  0.0f, 0.0f,
+//     Object* stand = &m_Objects[standIndex];
+//     Object* engine = &m_Objects[engineIndex];
+//     Object* arm = &m_Objects[armIndex];
+//     Object* secondArm = &m_Objects[secondArmIndex];
+// }
 
-    // +X (right)
-     0.5f,-0.5f,-0.5f,  1.0f, 0.0f, 0.0f,  1.0f, 0.0f,
-     0.5f, 0.5f,-0.5f,  1.0f, 0.0f, 0.0f,  1.0f, 1.0f,
-     0.5f, 0.5f, 0.5f,  1.0f, 0.0f, 0.0f,  0.0f, 1.0f,
-     0.5f, 0.5f, 0.5f,  1.0f, 0.0f, 0.0f,  0.0f, 1.0f,
-     0.5f,-0.5f, 0.5f,  1.0f, 0.0f, 0.0f,  0.0f, 0.0f,
-     0.5f,-0.5f,-0.5f,  1.0f, 0.0f, 0.0f,  1.0f, 0.0f,
+testRobotS* createRobot(std::vector<Object>& objects,const std::string& name, robotMesh robotMesh, Material material, glm::vec3 position){
+    testRobotS* robot = new testRobotS;
 
-    // -X (left)
-    -0.5f,-0.5f,-0.5f, -1.0f, 0.0f, 0.0f,  1.0f, 0.0f,
-    -0.5f,-0.5f, 0.5f, -1.0f, 0.0f, 0.0f,  1.0f, 1.0f,
-    -0.5f, 0.5f, 0.5f, -1.0f, 0.0f, 0.0f,  0.0f, 1.0f,
-    -0.5f, 0.5f, 0.5f, -1.0f, 0.0f, 0.0f,  0.0f, 1.0f,
-    -0.5f, 0.5f,-0.5f, -1.0f, 0.0f, 0.0f,  0.0f, 0.0f,
-    -0.5f,-0.5f,-0.5f, -1.0f, 0.0f, 0.0f,  1.0f, 0.0f,
+    size_t standIndex = objects.size();
+    objects.emplace_back(name + " Stand", robotMesh.robotStand, material, position);
+    size_t engineIndex = objects.size();
+    objects.emplace_back(name + " Engine", robotMesh.robotEngine, material, glm::vec3(-0.69f, 0.39f, -0.02f));
+    size_t armIndex = objects.size();
+    objects.emplace_back(name+" Arm", robotMesh.robotArm, material, glm::vec3(0.18f, 0.76f, -1.04f));
+    size_t secondArmIndex = objects.size();
+    objects.emplace_back(name + " Second Arm", robotMesh.robotSecondArm, material, glm::vec3(-0.14f, 3.75f, 0.08f));
 
-    // +Y (top)
-    -0.5f, 0.5f,-0.5f,  0.0f, 1.0f, 0.0f,  0.0f, 1.0f,
-    -0.5f, 0.5f, 0.5f,  0.0f, 1.0f, 0.0f,  1.0f, 1.0f,
-     0.5f, 0.5f, 0.5f,  0.0f, 1.0f, 0.0f,  1.0f, 0.0f,
-     0.5f, 0.5f, 0.5f,  0.0f, 1.0f, 0.0f,  1.0f, 0.0f,
-     0.5f, 0.5f,-0.5f,  0.0f, 1.0f, 0.0f,  0.0f, 0.0f,
-    -0.5f, 0.5f,-0.5f,  0.0f, 1.0f, 0.0f,  0.0f, 1.0f,
+    Object* stand = &objects[standIndex];
+    Object* engine = &objects[engineIndex];
+    Object* arm = &objects[armIndex];
+    Object* secondArm = &objects[secondArmIndex];
 
-    // -Y (bottom)
-    -0.5f,-0.5f,-0.5f,  0.0f,-1.0f, 0.0f,  0.0f, 1.0f,
-     0.5f,-0.5f,-0.5f,  0.0f,-1.0f, 0.0f,  1.0f, 1.0f,
-     0.5f,-0.5f, 0.5f,  0.0f,-1.0f, 0.0f,  1.0f, 0.0f,
-     0.5f,-0.5f, 0.5f,  0.0f,-1.0f, 0.0f,  1.0f, 0.0f,
-    -0.5f,-0.5f, 0.5f,  0.0f,-1.0f, 0.0f,  0.0f, 0.0f,
-    -0.5f,-0.5f,-0.5f,  0.0f,-1.0f, 0.0f,  0.0f, 1.0f,
-    };
+
+    robot->animTime = 0;
+    robot->animDuration = 10.0f;
+    robot->stand = stand;
+    robot->engine = engine;
+    robot->arm = arm;
+    robot->secondArm = secondArm;
+
+
+    engine->setParent(stand);
+    arm->setParent(engine);
+    secondArm->setParent(arm);
+
+    return robot;
+}
+
+void Application::initData(){
     //TEST MESHLOADER
+    m_LightMesh = MeshLoader::loadObj("resources/meshes/cube.obj");
     m_TestMesh = MeshLoader::loadObj("resources/meshes/plane.obj");
-    m_StandMesh = MeshLoader::loadObj("resources/meshes/stand.obj");
-    m_ArmMesh = MeshLoader::loadObj("resources/meshes/testArm.obj");
-    m_ArmArmMesh = MeshLoader::loadObj("resources/meshes/testArm.obj");
-    // m_CubeMesh = new Mesh(cubeVerts, sizeof(cubeVerts));
-    // m_CubeMesh->addVertexAttribPointer(3);
-    // m_CubeMesh->addVertexAttribPointer(3);
-    // m_CubeMesh->addVertexAttribPointer(2);
-    // m_CubeMesh->enableVertexAttribPointer();
+    m_WallMesh = MeshLoader::loadObj("resources/meshes/wall.obj");
 
     float aspect = (float)m_WinSize.width / (float)m_WinSize.height;
 
-    m_LightMesh = new Mesh(cubeVerts, sizeof(cubeVerts));
-    m_LightMesh->addVertexAttribPointer(3);
-    m_LightMesh->addVertexAttribPointer(3);
-    m_LightMesh->addVertexAttribPointer(2);
-    m_LightMesh->enableVertexAttribPointer();
-
-    m_LightPos = glm::vec3(1.2f, 1.0f, 2.0f);
-    m_LightModel = glm::mat4(1.0f);
-    m_LightModel = glm::translate(m_LightModel, m_LightPos);
-    m_LightModel = glm::scale(m_LightModel, glm::vec3(0.2f));
-
-
+    
     m_LightShader = new Shader("resources/shaders/vertex.glsl","resources/shaders/lightFragment.glsl");
     m_LightShader->compile();
     m_LightShader->bind();
     
+    glm::vec3 lightPos = glm::vec3(0, 10.0f, 0);
+    Material dummy;
+    m_Lights.emplace_back("Light 1", m_LightMesh, dummy, lightPos).setScale(0.2f);
 
     m_Shader = new Shader("resources/shaders/vertex.glsl","resources/shaders/fragment.glsl");
     m_Shader->compile();
@@ -165,15 +193,28 @@ void Application::init(){
     m_Texture = new Texture();
     m_Texture->compileTexture("resources/textures/pavement.jpg");
     m_Texture->compileSpecular("resources/textures/pavementSpec.jpg");
+
+    m_MetalTexture = new Texture();
+    m_MetalTexture->compileTexture("resources/textures/metal.jpg");
+    m_MetalTexture->compileSpecular("resources/textures/metalSpec.jpg");
+
+    m_CubeTexture = new Texture();
+    m_CubeTexture->compileTexture("resources/textures/crate.jpg");
+    m_CubeTexture->compileSpecular("resources/textures/crateSpec.jpg");
+
+    m_WallTexture = new Texture();
+    m_WallTexture->compileTexture("resources/textures/metal.jpg");
+    m_WallTexture->compileSpecular("resources/textures/metalSpec.jpg");
+
     m_Shader->bind();
     m_Shader->setVec3("lightColor", glm::vec3(1.0f, 1.0f,1.0f));
 
-    m_Shader->setVec3("uLight.position", m_LightPos);
-    m_Shader->setVec3("uLight.ambient", glm::vec3(0.2f,0.2f,0.2f));
-    m_Shader->setVec3("uLight.diffuse", glm::vec3(0.5f,0.5f,0.5f));
-    m_Shader->setVec3("uLight.specular", glm::vec3(1.0f,1.0f,1.0f));
+    m_Shader->setVec3("uLight[0].position", lightPos);
+    m_Shader->setVec3("uLight[0].ambient", glm::vec3(0.3f,0.3f,0.3f));
+    m_Shader->setVec3("uLight[0].diffuse", glm::vec3(0.4f,0.4f,0.4f));
+    m_Shader->setVec3("uLight[0].specular", glm::vec3(1.0f,1.0f,1.0f));
+    //m_Shader->setInt("uUsedDirLight", 1);
 
-    //m_Shader->setVec3("viewPos", m_Camera.getPosition());
     m_Shader->setInt("uMaterial.diffuse", 0);
     m_Shader->setInt("uMaterial.specular", 1);
     m_Shader->unbind();
@@ -181,63 +222,319 @@ void Application::init(){
     m_Objects.reserve(128);
 
     Material geometry{ShaderID::Geometry, m_Texture, 10};
-    // Object obj{m_TestMesh, geometry, glm::mat4(1.0)};
-    // m_Objects.emplace_back(obj);
+    Material metalMat{ShaderID::Geometry, m_MetalTexture, 256};
 
-    // glm::mat4 secondModel = glm::mat4(1.0f);
-    // secondModel = glm::translate(secondModel, glm::vec3(0, 5.0f, -3.0f));
-
-    // Object sObj{m_LightMesh, geometry, secondModel};
-    // m_Objects.emplace_back(sObj);
-    
-
-    // Object stand{m_StandMesh, geometry, glm::mat4(1.0f),glm::mat4(1.0f)};
-    // m_Objects.emplace_back(stand);
-
-    // glm::mat4 armLocal = glm::translate(glm::mat4(1.0f), glm::vec3(-0.62f, 5.4f, 0.0f));
-    // glm::mat4 armWorld = stand.world * armLocal;
-
-    // Object arm{m_ArmMesh, geometry, armWorld, armLocal};
-    // size_t armIndex = m_Objects.size();
-    // m_Objects.emplace_back(arm);
-    // m_ArmTest = &m_Objects[armIndex];
-
-    // glm::mat4 armArmLocal = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0, -3.9f));
-    // glm::mat4 armArmWorld = armWorld * armArmLocal;
-    // Object armArm{m_ArmArmMesh, geometry, armArmWorld, armArmLocal};
-    // size_t armArmIndex = m_Objects.size();
-    // m_Objects.emplace_back(armArm);
-    // m_ArmArmsTest = &m_Objects[armArmIndex];
+    Material cubeMat{ShaderID::Geometry, m_CubeTexture, 10};
 
     m_Objects.emplace_back("Plane", m_TestMesh, geometry);
-    m_Objects.emplace_back("Kostka", m_LightMesh, geometry, glm::vec3(0, 5.0f, -3.0f));
-    size_t standIndex = m_Objects.size();
-    m_Objects.emplace_back("Stand", m_StandMesh, geometry);
-    size_t ArmIndex = m_Objects.size();
-    m_Objects.emplace_back("First Arm", m_ArmMesh, geometry, glm::vec3(-0.62f, 5.4f, 0.40f));
-    size_t ArmArmIndex = m_Objects.size();
-    m_Objects.emplace_back("Second Arm", m_ArmMesh, geometry, glm::vec3(0, 0, -3.9f));
+    m_Objects.emplace_back("Wall1", m_WallMesh, metalMat, glm::vec3(0, 4, 30), glm::vec3(90,0,0));
+    m_Objects.emplace_back("Wall2", m_WallMesh, metalMat, glm::vec3(0, 4, -30), glm::vec3(90,0,0));
+    m_Objects.emplace_back("Wall3", m_WallMesh, metalMat, glm::vec3(30, 4, 0), glm::vec3(90,0,90));
+    m_Objects.emplace_back("Wall3", m_WallMesh, metalMat, glm::vec3(-30, 4, 0), glm::vec3(90,0,90));
+    
+    m_RobotStand = MeshLoader::loadObj("resources/meshes/firstRobot/stand.obj");
+    m_RobotEngine = MeshLoader::loadObj("resources/meshes/firstRobot/engine.obj");
+    m_RobotArm = MeshLoader::loadObj("resources/meshes/firstRobot/arm.obj");
+    m_RobotSecondArm = MeshLoader::loadObj("resources/meshes/firstRobot/second_arm.obj");
 
-    Object* stand = &m_Objects[standIndex];
-    Object* arm = &m_Objects[ArmIndex];
-    arm->setParent(stand);
-    Object* armArm = &m_Objects[ArmArmIndex];
-    armArm->setParent(arm);
+    robotMesh rMesh{.robotStand = m_RobotStand, .robotEngine = m_RobotEngine, .robotArm = m_RobotArm, .robotSecondArm = m_RobotSecondArm};
+    m_SecondRobot = createRobot(m_Objects, "RobotoZiomo", rMesh, metalMat, glm::vec3(-13.2f, 0.4, -1.2f));
+    m_SecondRobot->engine->setRotation(glm::vec3(0, 180.0f, 0));
+    m_Robot = createRobot(m_Objects, "Pierwszy", rMesh, metalMat, glm::vec3(0, 0.4, 0));
+    m_Robot->engineRotation = glm::vec3(0, 120.0f, 0);
+    m_Robot->armRotation = glm::vec3(0,0, 11.0f);
+    m_Robot->secondArmRotation = glm::vec3(0, 0, 44.0f);
+    m_SecondRobot->engineRotation = glm::vec3(0, 90.0f, 0);
+    m_SecondRobot->armRotation = glm::vec3(0, 0, 11.0f);
+    m_SecondRobot->secondArmRotation = glm::vec3(0,0, 44.0f);
+    // size_t standIndex = m_Objects.size();
+    // m_Objects.emplace_back("Robot Stand", m_RobotStand, metalMat, glm::vec3(0, 0.4f, 0));
+    // size_t engineIndex = m_Objects.size();
+    // m_Objects.emplace_back("Robot Engine", m_RobotEngine, metalMat, glm::vec3(-0.69f, 0.39f, -0.02f));
+    // size_t armIndex = m_Objects.size();
+    // m_Objects.emplace_back("Robot Arm", m_RobotArm, metalMat, glm::vec3(0.18f, 0.76f, -1.04f));
+    // size_t secondArmIndex = m_Objects.size();
+    // m_Objects.emplace_back("Robot Second Arm", m_RobotSecondArm, metalMat, glm::vec3(-0.14f, 3.75f, 0.08f));
+
+    // Object* stand = &m_Objects[standIndex];
+    // Object* engine = &m_Objects[engineIndex];
+    // Object* arm = &m_Objects[armIndex];
+    // Object* secondArm = &m_Objects[secondArmIndex];
+
+
+    // m_Robot->animTime = 0;
+    // m_Robot->animDuration = 10.0f;
+    // m_Robot->stand = stand;
+    // m_Robot->engine = engine;
+    // m_Robot->arm = arm;
+    // m_Robot->secondArm = secondArm;
+    // m_Robot->engineRotation = glm::vec3(0, 120.0f, 0);
+    // m_Robot->armRotation = glm::vec3(0,0, 11.0f);
+    // m_Robot->secondArmRotation = glm::vec3(0, 0, 44.0f);
+
+    // engine->setParent(stand);
+    // arm->setParent(engine);
+    // secondArm->setParent(arm);
+
+    size_t cubeIndex = m_Objects.size();
+    m_Objects.emplace_back("Cube to pickup", m_LightMesh, cubeMat, glm::vec3(1.7f, 0.6f, 5.4f));
+    m_CubeToPickup = &m_Objects[cubeIndex];
+    m_CubeToPickup->setRotation(glm::vec3(0, 33.0f, 0));
 }
 
 void Application::initUI(){
-    ImGui::CreateContext();
+    m_UI.init(m_Window);
+}
 
-    ImGuiIO& io = ImGui::GetIO();
-    (void)io;
+void Application::updateUI(){
+        
+        m_UI.newFrame(m_IsFocused);
+        glm::vec3 cameraPos = m_Camera.getPosition();
+        m_UI.pushLayer<GeneralLayer>(cameraPos, m_Lights);
+        m_UI.pushLayer<ObjectLayer>(m_Objects, m_Camera.getPosition());
 
-    ImGui::StyleColorsDark();
+        if(m_isLeftMousePress){
+            m_isLeftMousePress = false;
+            if(!m_IsFocused && !ImGui::GetIO().WantCaptureMouse){
+                m_FirstMouse = true;
+                m_IsFocused = true;
+                glfwSetInputMode(m_Window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+            }
+        }
 
-    ImGui_ImplGlfw_InitForOpenGL(m_Window, false);
-    ImGui_ImplOpenGL3_Init("#version 330 core");
+        m_UI.render();    
+}
 
-    ImGui::GetIO().ConfigFlags |= ImGuiConfigFlags_NoMouseCursorChange; // opcjonalnie
+bool animateStage(float& robotAngle, float robotDesireAngle, float angleSpeed, float negative = 1){
+    bool direction = (negative > 0) ? (robotAngle < robotDesireAngle ) : (robotAngle > robotDesireAngle);
+    bool secondDirection = (negative > 0) ? (robotAngle + angleSpeed >= robotDesireAngle) : (robotAngle + angleSpeed <= robotDesireAngle);
 
+    // if(direction){
+    //     if(secondDirection){
+    //         robotAngle = robotDesireAngle;
+    //         return true;
+    //     }
+    //     else{
+    //         robotAngle += angleSpeed * negative;
+    //         return false;
+    //     }
+    // }
+    // return true;
+    if(secondDirection){
+        robotAngle = robotDesireAngle;
+        return true;
+    }
+    robotAngle += angleSpeed * negative;
+    return false;
+}
+
+void Application::testAnimate(float dt){
+    float& ea = m_Robot->engine->getRotation().y;
+    std::cout << ea << std::endl;
+    std::cout << "Desired: " << m_Robot->engineRotation.y << std::endl;
+    //NEW
+    if(m_Robot->stage == 0){
+        float& engineAngle = m_Robot->engine->getRotation().y;
+        float addAngle = 20.0f * dt;
+        if(animateStage(engineAngle, m_Robot->engineRotation.y, addAngle)){
+            m_Robot->stage++;
+        }
+    }
+    else if(m_Robot->stage == 1){
+        float& armAngle = m_Robot->arm->getRotation().z;
+        float addAngle = 20.0f * dt;
+        if(animateStage(armAngle, m_Robot->armRotation.z, addAngle)){
+            m_Robot->stage++;
+        }
+    }
+    else if(m_Robot->stage == 2){
+        float& secondArmAngle = m_Robot->secondArm->getRotation().z;
+        float addAngle = 20.0f * dt;
+        if(animateStage(secondArmAngle, m_Robot->secondArmRotation.z, addAngle)){
+            m_Robot->stage++;
+            m_CubeToPickup->setRotation(glm::vec3(0));
+            m_CubeToPickup->setPosition(glm::vec3(-6.7f, 1.5f, 0.2f));
+            m_CubeToPickup->setParent(m_Robot->secondArm);
+        }
+    }
+    else if(m_Robot->stage == 3){
+        m_Robot->secondArmRotation = glm::vec3(0);
+        float& secondArmAngle = m_Robot->secondArm->getRotation().z;
+        float addAngle = 20.0f * dt;
+        if(animateStage(secondArmAngle, m_Robot->secondArmRotation.z, addAngle, -1)){
+            m_Robot->stage++;
+        }
+    }
+    else if(m_Robot->stage == 4){
+        m_Robot->armRotation = glm::vec3(0);
+        float& armAngle = m_Robot->arm->getRotation().z;
+        float addAngle = 20.0f * dt;
+        if(animateStage(armAngle, m_Robot->armRotation.z, addAngle, -1)){
+            m_Robot->stage++;
+        }
+    }
+    else if(m_Robot->stage == 5){
+        m_Robot->engineRotation = glm::vec3(0);
+        float& engineAngle = m_Robot->engine->getRotation().y;
+        float addAngle = 20.0f * dt;
+        if(animateStage(engineAngle, m_Robot->engineRotation.y, addAngle, -1)){
+            m_Robot->stage++;
+            m_SecondRobot->stage++;
+            m_CubeToPickup->setParent(m_SecondRobot->secondArm);
+        }
+    }
+    else if(m_SecondRobot->stage == 1){
+        float& engineAngle = m_SecondRobot->engine->getRotation().y;
+        float addAngle = 20.0f * dt;
+        if(animateStage(engineAngle, m_SecondRobot->engineRotation.y, addAngle, -1)){
+            m_SecondRobot->stage++;
+        }
+    }
+    else if(m_SecondRobot->stage == 2){
+        float& armAngle = m_SecondRobot->arm->getRotation().z;
+        float addAngle = 20.0f * dt;
+        if(animateStage(armAngle, m_SecondRobot->armRotation.z, addAngle, 1)){
+            m_SecondRobot->stage++;
+        }
+    }
+    else if(m_SecondRobot->stage == 3){
+        float& secondArmAngle = m_SecondRobot->secondArm->getRotation().z;
+        float addAngle = 20.0f * dt;
+        if(animateStage(secondArmAngle, m_SecondRobot->secondArmRotation.z, addAngle, 1)){
+            m_SecondRobot->stage++;
+            m_SecondRobot->engineRotation = glm::vec3(0, 180.0f, 0);
+            m_SecondRobot->armRotation = glm::vec3(0);
+            m_SecondRobot->secondArmRotation = glm::vec3(0);
+            m_CubeToPickup->setPositionToWorldMatrix();
+            m_CubeToPickup->setParent(nullptr);
+        }
+    }
+    else if(m_SecondRobot->stage == 4){
+        float& secondArmAngle = m_SecondRobot->secondArm->getRotation().z;
+        float addAngle = 20.0f * dt;
+        if(animateStage(secondArmAngle, m_SecondRobot->secondArmRotation.z, addAngle, -1)){
+            m_SecondRobot->stage++;
+        }
+    }
+    else if(m_SecondRobot->stage == 5){
+        float& armAngle = m_SecondRobot->arm->getRotation().z;
+        float addAngle = 20.0f * dt;
+        if(animateStage(armAngle, m_SecondRobot->armRotation.z, addAngle, -1)){
+            m_SecondRobot->stage++;
+        }
+    }
+    else if(m_SecondRobot->stage == 6){
+        float& engineAngle = m_SecondRobot->engine->getRotation().y;
+        float addAngle = 20.0f * dt;
+        if(animateStage(engineAngle, m_SecondRobot->engineRotation.y, addAngle, 1)){
+            m_Robot->engine->setRotation(glm::vec3(0));
+            m_SecondRobot->engine->setRotation(glm::vec3(0,120, 0));
+            m_Robot->stage = 0;
+            m_SecondRobot->stage = 0;
+        }
+    }
+    else if(m_SecondRobot->stage == 7){
+        
+    }
+    //OLD
+    // if(m_Robot->animTime > m_Robot->animDuration){
+    //     m_Robot->animTime = 0;
+    // }
+    // else if(m_Robot->animTime >= 0.0f && m_Robot->animTime < 2.0f){
+    //     glm::vec3& engineRot = m_Robot->engine->getRotation();
+    //     engineRot.y += 50.0f * dt;
+    // }
+    // else if(m_Robot->animTime >= 2.0f && m_Robot->animTime < 3.0f){
+    //     glm::vec3& armRot = m_Robot->arm->getRotation();
+    //     armRot.z -= 30.0f * dt;
+    // }
+    // else if(m_Robot->animTime >= 3.0f && m_Robot->animTime < 5.0f){
+    //     glm::vec3& secondArm = m_Robot->secondArm->getRotation();
+    //     secondArm.z -= 30.0f * dt;
+    // }
+    // else if(m_Robot->animTime >= 5.0f && m_Robot->animTime < 7.0f){
+    //     glm::vec3& secondArm = m_Robot->secondArm->getRotation();
+    //     secondArm.z += 30.0f * dt;
+    // }
+    // else if(m_Robot->animTime >= 7.0f && m_Robot->animTime < 8.0f){
+    //     glm::vec3& armRot = m_Robot->arm->getRotation();
+    //     armRot.z += 30.0f * dt;
+    // }
+    // else if(m_Robot->animTime >= 8.0f && m_Robot->animTime < 10.0f){
+    //     glm::vec3& engineRot = m_Robot->engine->getRotation();
+    //     engineRot.y -= 50.0f * dt;
+    // }
+}
+
+void Application::update(float dt){
+    
+
+    if (m_Keys[GLFW_KEY_W]) m_Camera.moveForward(dt);
+    if (m_Keys[GLFW_KEY_S]) m_Camera.moveBackward(dt);
+    if (m_Keys[GLFW_KEY_D]) m_Camera.moveRight(dt);
+    if (m_Keys[GLFW_KEY_A]) m_Camera.moveLeft(dt);
+    if (m_Keys[GLFW_KEY_SPACE]) m_Camera.moveUp(dt);
+    if (m_Keys[GLFW_KEY_LEFT_CONTROL]) m_Camera.moveDown(dt);
+
+    if(m_Keys[GLFW_KEY_M]){
+        glfwSetWindowShouldClose(m_Window, GLFW_TRUE);
+    }
+
+    if (m_Keys[GLFW_KEY_LEFT_SHIFT])
+        m_Camera.fastMove();
+    else
+        m_Camera.normalMove();
+
+    if(m_Keys[GLFW_KEY_ESCAPE]){
+        m_IsFocused = false;
+        glfwSetInputMode(m_Window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+    }
+
+   testAnimate(dt);
+}
+
+
+void Application::render(){
+    //glClearColor(0.2f,0.3f,0.3f,1.0f);
+    //glClearColor(0.0f,0.0f,0.0f,1.0f);
+    glClearColor(0.53f,0.81f,0.92f,1.0f);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+    float aspect = (float)m_WinSize.width / (float)m_WinSize.height;
+    glm::mat4 view = m_Camera.getView();
+    glm::mat4 proj = m_Camera.getProjection(aspect);
+
+    //REWORK
+    for(Object& object : m_Objects){
+        if(object.getMaterial().shader == ShaderID::Geometry){
+            m_Shader->bind();
+            m_Shader->setMat4("uModel", object.worldMatrix());
+            m_Shader->setMat4("uView", view);
+            m_Shader->setMat4("uProjection", proj);
+            m_Shader->setVec3("viewPos", m_Camera.getPosition());
+            size_t numOfLights = m_Lights.size();
+            for(int i = 0; i < numOfLights; i++){
+                m_Shader->setVec3("uLight[" + std::to_string(i) + "].position", m_Lights[i].getPosition());
+            }
+            m_Shader->setInt("uUsedDirLight", numOfLights);
+            m_Shader->setFloat("uMaterial.shininess", object.getMaterial().shinines);
+            object.getMaterial().texture->bind();
+            object.getMesh()->bind();
+            glDrawArrays(GL_TRIANGLES, 0,  object.getMesh()->getVertexCount());
+            object.getMesh()->unbind();
+            object.getMaterial().texture->unBind();
+            m_Shader->unbind();
+        }
+    }
+    for(Object& object : m_Lights){
+        m_LightShader->bind();
+        m_LightShader->setMat4("uModel", object.worldMatrix());
+        m_LightShader->setMat4("uView", view);
+        m_LightShader->setMat4("uProjection", proj);
+        object.getMesh()->bind();
+        glDrawArrays(GL_TRIANGLES, 0,  object.getMesh()->getVertexCount());
+        object.getMesh()->unbind();
+    }
 }
 
 void Application::run(){
@@ -253,142 +550,6 @@ void Application::run(){
         updateUI();
 
         glfwSwapBuffers(m_Window);
-    }
-}
-
-void Application::update(float dt){
-    
-
-    if (m_Keys[GLFW_KEY_W]) m_Camera.moveForward(dt);
-    if (m_Keys[GLFW_KEY_S]) m_Camera.moveBackward(dt);
-    if (m_Keys[GLFW_KEY_D]) m_Camera.moveRight(dt);
-    if (m_Keys[GLFW_KEY_A]) m_Camera.moveLeft(dt);
-    if (m_Keys[GLFW_KEY_SPACE]) m_Camera.moveUp(dt);
-    if (m_Keys[GLFW_KEY_LEFT_CONTROL]) m_Camera.moveDown(dt);
-
-    if (m_Keys[GLFW_KEY_LEFT_SHIFT])
-        m_Camera.fastMove();
-    else
-        m_Camera.normalMove();
-
-    if(m_Keys[GLFW_KEY_ESCAPE]){
-        m_IsFocused = false;
-        glfwSetInputMode(m_Window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
-    }
-
-
-    m_LightModel = glm::mat4(1.0f);
-    m_LightModel = glm::translate(m_LightModel, m_LightPos);
-    m_LightModel = glm::scale(m_LightModel, glm::vec3(0.2f));
-}
-
-void Application::updateUI(){
-        ImGuiIO& io = ImGui::GetIO();
-
-        if (m_IsFocused) {
-        io.ConfigFlags |= ImGuiConfigFlags_NoMouse;
-        // opcjonalnie: usuń mysz z UI żeby nic nie było hoverowane
-        
-        } else {
-            io.ConfigFlags &= ~ImGuiConfigFlags_NoMouse;
-        }   
-
-        ImGui_ImplOpenGL3_NewFrame();
-        ImGui_ImplGlfw_NewFrame();
-        ImGui::NewFrame();
-        {
-            ImGui::Begin("Ogólne");
-            glm::vec3& cameraPos = m_Camera.getPosition();    
-            ImGui::Text("Camera Position: %.2f, %.2f, %.2f", cameraPos.x, cameraPos.y, cameraPos.z);
-            ImGui::SliderFloat3("Light Position", &m_LightPos[0], -10, 10, "%.1f");
-            ImGui::SliderFloat("Shinines", &m_Objects[0].getMaterial().shinines, 1, 300, "%.0f");
-            ImGui::SliderFloat("Angle", &m_Angle, 360, 0, "%.0f");
-            ImGui::SliderFloat("Angle Arm", &m_ArmArmAngle, 360, 0, "%.0f");
-            ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / io.Framerate, io.Framerate);
-            ImGui::End();
-        }
-        {
-            ImGui::Begin("Obiekty");                        
-            for(Object& object : m_Objects){
-                if(ImGui::TreeNode(object.getName().c_str())){
-                    glm::vec3& objectPosition = object.getPosition();
-                    ImGui::Text("Position: %.2f, %.2f, %.2f", objectPosition.x, objectPosition.y, objectPosition.z);
-                    ImGui::SliderFloat3("Set Position", &objectPosition[0], -10, 10, "%.1f");
-                    glm::vec3& objectRotation = object.getRotation();
-                    ImGui::Text("Rotation: %.0f, %.0f, %.0f", objectRotation.x, objectRotation.y, objectRotation.z);
-                    ImGui::SliderFloat3("Set Rotation", &objectRotation[0], -360, 360, "%.0f");
-                    ImGui::TreePop();
-                }
-            }
-
-            
-            ImGui::End();
-        }
-
-        if(m_isLeftMousePress){
-            m_isLeftMousePress = false;
-            if(!m_IsFocused && !ImGui::GetIO().WantCaptureMouse){
-                m_FirstMouse = true;
-                m_IsFocused = true;
-                glfwSetInputMode(m_Window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-            }
-        }
-
-        ImGui::Render();
-        ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
-
-        
-}
-
-void Application::render(){
-    //glClearColor(0.2f,0.3f,0.3f,1.0f);
-    glClearColor(0.0f,0.0f,0.0f,1.0f);
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-    float aspect = (float)m_WinSize.width / (float)m_WinSize.height;
-    glm::mat4 view = m_Camera.getView();
-    glm::mat4 proj = m_Camera.getProjection(aspect);
-
-    m_LightShader->bind();
-    m_LightShader->setMat4("uModel", m_LightModel);
-    m_LightShader->setMat4("uView", view);
-    
-    m_LightShader->setMat4("uProjection", proj);
-
-    m_LightMesh->bind();
-    glDrawArrays(GL_TRIANGLES, 0, m_LightMesh->getVertexCount());
-    m_LightMesh->unbind();
-
-   
-
-    // m_ArmTest->local = glm::mat4(1.0f);
-    // m_ArmTest->local = glm::translate(glm::mat4(1.0f), glm::vec3(-0.62f, 5.4f, 0.48f));
-    // m_ArmTest->local = glm::rotate(m_ArmTest->local, glm::radians(m_Angle), glm::vec3(1.0f,0.0f,0.0f));
-    // m_ArmTest->world = glm::mat4(1.0f) * m_ArmTest->local;
-
-    // //m_ArmArmsTest->local = glm::mat4(1.0f);`
-    // m_ArmArmsTest->local = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0, -3.9f));
-    // m_ArmArmsTest->local = glm::rotate(m_ArmArmsTest->local, glm::radians(m_ArmArmAngle), glm::vec3(1.0f,0.0f,0.0f));
-    // m_ArmArmsTest->world = m_ArmTest->world * m_ArmArmsTest->local;
-    
-    //REWORK
-    for(Object& object : m_Objects){
-        if(object.getMaterial().shader == ShaderID::Geometry){
-            m_Shader->bind();
-            m_Shader->setMat4("uModel", object.worldMatrix());
-            m_Shader->setMat4("uView", view);
-            m_Shader->setMat4("uProjection", proj);
-            m_Shader->setVec3("viewPos", m_Camera.getPosition());
-            m_Shader->setVec3("uLight.position", m_LightPos);
-            m_Shader->setFloat("uMaterial.shininess", object.getMaterial().shinines);
-            object.getMaterial().texture->bind();
-            object.getMesh()->bind();
-            glDrawArrays(GL_TRIANGLES, 0,  object.getMesh()->getVertexCount());
-            object.getMesh()->unbind();
-            object.getMaterial().texture->unBind();
-            m_Shader->unbind();
-        }
-
     }
 }
 
